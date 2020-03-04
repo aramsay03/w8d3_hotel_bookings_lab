@@ -1,17 +1,50 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <bookings-form />
+    <bookings-grid :bookings="bookings"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import BookingsForm from '@/components/BookingsForm.vue';
+import BookingsService from '@/services/BookingsServices';
+import BookingsGrid from '@/components/BookingsGrid.vue';
+import { eventBus } from '@/main.js'
+
 
 export default {
   name: 'App',
+  data(){
+    return {
+      bookings: []
+    }
+  },
   components: {
-    HelloWorld
+    'bookings-form': BookingsForm,
+    'bookings-grid': BookingsGrid
+
+  },
+  mounted() {
+    this.getBookings();
+
+    eventBus.$on('submit-booking', payload => {
+      BookingsService.postBooking(payload)
+      .then(booking => this.bookings.push(booking));
+    });
+
+    eventBus.$on('delete-booking', id => {
+      BookingsService.deleteBooking(id)
+        .then(() => {
+          const index = this.bookings.findIndex(booking => booking._id === id);
+          this.bookings.splice(index, 1);
+        });
+    });
+  },
+  methods: {
+    getBookings() {
+      BookingsService.getBookings()
+      .then(bookings => this.bookings = bookings);
+    }
   }
 }
 </script>
